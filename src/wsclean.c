@@ -395,6 +395,7 @@ int main(int argc, char **argv)
     cmd_t cmd = {0};
     const char *fpath;
     const char *fname;
+	const char *fname4err;
     const char *out_fname = NULL;
     filedef_t fdef;
 
@@ -519,13 +520,17 @@ int main(int argc, char **argv)
 
         fname = filename(fpath);
 
-        if (cmd.verbose) fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname));
+		fname4err = fname;
+		if (!*fname4err) 
+			fname4err = fpath;
+
+        if (cmd.verbose) fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
 
         // read file into buffer:
         buf = readfile(&fdef, &len);
         if (!buf)
         {
-            fprintf(stderr, "*** ERROR: failure while reading data from file '%s'\n", (cmd.verbose ? fpath : fname));
+            fprintf(stderr, "*** ERROR: failure while reading data from file '%s'\n", (cmd.verbose ? fpath : fname4err));
             exit(EXIT_FAILURE);
         }
 
@@ -550,7 +555,7 @@ int main(int argc, char **argv)
         obuf = (char *)malloc(size + 4);
         if (!obuf)
         {
-            fprintf(stderr, "*** ERROR: failure while processing data from file '%s'\n", (cmd.verbose ? fpath : fname));
+            fprintf(stderr, "*** ERROR: failure while processing data from file '%s'\n", (cmd.verbose ? fpath : fname4err));
             exit(EXIT_FAILURE);
         }
 
@@ -765,13 +770,25 @@ int main(int argc, char **argv)
 		len = writefile(&fdef, obuf, d - obuf);
 		if (len < 0)
 		{
-			fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", (cmd.verbose ? fpath : fname));
+			fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", (cmd.verbose ? fpath : fname4err));
 			exit(EXIT_FAILURE);
 		}
 
 		closefile(&fdef);
 	}
 	
+    if (fpath != NULL)
+    {
+        fname = filename(fpath);
+
+		fname4err = fname;
+		if (!*fname4err) 
+			fname4err = fpath;
+
+		fprintf(stderr, "*** ERROR: cannot open file '%s' for reading...\n", (cmd.verbose ? fpath : fname4err));
+		exit(EXIT_FAILURE);
+	}
+
 	if (cmd.verbose) fprintf(stderr, "Processing: ---done---\n");
 	exit(EXIT_SUCCESS);
 }
