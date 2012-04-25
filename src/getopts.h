@@ -199,20 +199,20 @@ getopts(const option_t *options, const char **param);
 /**
  * return value of getopts(), if you forgot to call getopts_init()
  */
-#define GETOPTS_NO_INIT              0xffffffff
+#define GETOPTS_NO_INIT              (~0u)
 
 /**
  * return value of getopts() for unknown options. The offending option is
  * written to the 'param' argument.
  */
-#define GETOPTS_UNKNOWN              0xfffffffe
+#define GETOPTS_UNKNOWN              (~1u)
 
 /**
  * return value of getopts() if user entered an option which expected
  * a parameter, but the parameter is missing. The offending option is
  * written to the 'param' argument.
  */
-#define GETOPTS_MISSING_PARAM        0xfffffffc
+#define GETOPTS_MISSING_PARAM        (~2u)
 
 /**
  * found a parameter which is not an option (i.e. doesn't start with
@@ -220,7 +220,7 @@ getopts(const option_t *options, const char **param);
  * i.e. in "grep pattern", "pattern" is not an option but a simple
  * parameter.. The parameter is stored in the 'param' argument.
  */
-#define GETOPTS_PARAMETER            0xfffffffb
+#define GETOPTS_PARAMETER            (~3u)
 
 #ifdef __cplusplus
 } // extern "C"
