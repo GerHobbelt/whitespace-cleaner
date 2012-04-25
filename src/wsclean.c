@@ -200,7 +200,7 @@ int pop_filedef(filedef_t *dst, const char **filepath, const char *out_fname)
     static int idx = 0;
 
     memset(dst, 0, sizeof(*dst));
-	*filepath = NULL;
+    *filepath = NULL;
 
     if (idx == 0 && !infiles)
     {
@@ -396,7 +396,7 @@ int main(int argc, char **argv)
     cmd_t cmd = {0};
     const char *fpath;
     const char *fname;
-	const char *fname4err;
+    const char *fname4err;
     const char *out_fname = NULL;
     filedef_t fdef;
 
@@ -521,9 +521,9 @@ int main(int argc, char **argv)
 
         fname = filename(fpath);
 
-		fname4err = fname;
-		if (!*fname4err) 
-			fname4err = fpath;
+        fname4err = fname;
+        if (!*fname4err)
+            fname4err = fpath;
 
         if (cmd.verbose) fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
 
@@ -783,7 +783,7 @@ int main(int argc, char **argv)
         fname = filename(fpath);
 
 		fname4err = fname;
-		if (!*fname4err) 
+		if (!*fname4err)
 			fname4err = fpath;
 
 		fprintf(stderr, "*** ERROR: cannot open file '%s' for reading...\n", (cmd.verbose ? fpath : fname4err));
