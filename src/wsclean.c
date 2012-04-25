@@ -177,13 +177,13 @@ void add_infile(const char *path)
 
     if (!infiles)
     {
-        infiles = malloc(2 * sizeof(*infiles));
+        infiles = (const char **)malloc(2 * sizeof(*infiles));
     }
     else
     {
         for (idx = 0; infiles[idx]; idx++)
             ;
-        infiles = realloc((void *)infiles, (idx + 2) * sizeof(*infiles));
+        infiles = (const char **)realloc((void *)infiles, (idx + 2) * sizeof(*infiles));
     }
     infiles[idx] = path;
     infiles[++idx] = NULL;
@@ -200,6 +200,7 @@ int pop_filedef(filedef_t *dst, const char **filepath, const char *out_fname)
     static int idx = 0;
 
     memset(dst, 0, sizeof(*dst));
+	*filepath = NULL;
 
     if (idx == 0 && !infiles)
     {
@@ -304,15 +305,15 @@ int writefile(filedef_t *f, const char *buf, size_t size)
 
 void closefile(filedef_t *f)
 {
+    if (f->fout && f->fout != stdout && f->fout != f->fin)
+    {
+        fclose(f->fout);
+        f->fout = NULL;
+    }
     if (f->fin && f->fin != stdin)
     {
         fclose(f->fin);
         f->fin = NULL;
-    }
-    if (f->fout && f->fout != stdout)
-    {
-        fclose(f->fout);
-        f->fout = NULL;
     }
 }
 
@@ -770,14 +771,14 @@ int main(int argc, char **argv)
 		len = writefile(&fdef, obuf, d - obuf);
 		if (len < 0)
 		{
-			fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", (cmd.verbose ? fpath : fname4err));
+			fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", out_fname);
 			exit(EXIT_FAILURE);
 		}
 
 		closefile(&fdef);
 	}
 	
-    if (fpath != NULL)
+    if (fdef.fin == NULL && fpath != NULL)
     {
         fname = filename(fpath);
 
@@ -786,6 +787,12 @@ int main(int argc, char **argv)
 			fname4err = fpath;
 
 		fprintf(stderr, "*** ERROR: cannot open file '%s' for reading...\n", (cmd.verbose ? fpath : fname4err));
+		exit(EXIT_FAILURE);
+	}
+
+    if (fdef.fout == NULL && out_fname != NULL)
+    {
+		fprintf(stderr, "*** ERROR: cannot open output file '%s' for writing...\n", out_fname);
 		exit(EXIT_FAILURE);
 	}
 
