@@ -602,6 +602,21 @@ int main(int argc, char **argv)
                     inside.el.continued_line++;
                     inside.el.continued_line %= 3;
                 }
+				else
+				{
+					// quoted strings won't make it past the newline, unless it's continued C-preprocessor style.
+					//
+					// This is to prevent cockups when you're actually not formatting source code but rather a 
+					// text file with maybe some source code mingling with the regular text in there.
+	                if (inside.el.quoted_string)
+					{
+						inside.el.quoted_string = 0;
+					}
+	                if (inside.el.dquoted_string)
+					{
+						inside.el.dquoted_string = 0;
+					}
+				}
 
                 switch (cmd.lf_mode)
                 {
@@ -699,6 +714,30 @@ int main(int argc, char **argv)
                     continue;
                 }
 
+			case '\\':
+				// support escape sequences: nobody in their right mind is writing stuff like 
+				//    \"xyz
+				// unless it's code.
+				//
+				// We don't care so much about the escape sequences as long as they're not escaping
+				// quotes, so the only things we watch for is \' and \" here.
+
+				if (s[1] != '\n' && s[1] != '\r' && s[1] != '\t')
+				{
+					// first non-whitespace one this line?
+					if (!inside.anything && !d_non_ws)
+					{
+						previous_line_indent = colpos;
+					}
+
+					colpos += 2;
+					*d++ = *s++;
+					*d++ = *s;
+					d_non_ws = d;
+					continue;
+				}
+				// fall through
+				
             default:
                 // non-whitespace is assumed:
                 if (!inside.anything && !d_non_ws)
@@ -719,9 +758,9 @@ int main(int argc, char **argv)
                         if (*s == '\\' && (s[1] == '\r' || s[1] == '\n'))
 							inside.el.continued_line = 1;
 
-						if (*s == '\'' && s != buf && s[-1] != '\\' && !inside.el.dquoted_string)
+						if (*s == '\'' && !inside.el.dquoted_string)
                             inside.el.quoted_string = !inside.el.quoted_string;
-                        if (*s == '"' && s != buf && s[-1] != '\\' && !inside.el.quoted_string)
+                        if (*s == '"' && !inside.el.quoted_string)
 							inside.el.dquoted_string = !inside.el.dquoted_string;
 
 						if (*s == '<' && s[1] == '<' && s[2] == '<' && !inside.el.quoted_string && !inside.el.dquoted_string)
