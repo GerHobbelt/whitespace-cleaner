@@ -58,6 +58,7 @@ typedef enum command
     ARG_LE_UNIX,
     ARG_LE_MSDOS,
     ARG_VERBOSE,
+    ARG_IGNORE_ACCESS_ERRORS,
 } command_t;
 
 static const option_t opts[] =
@@ -88,6 +89,13 @@ static const option_t opts[] =
             "e",
             "trim",
             "trim trailing whitespace",
+            0
+    },
+    {
+        ARG_IGNORE_ACCESS_ERRORS,
+            "i",
+            "ignore",
+            "ignore I/O access errors (read/write errors remain showstoppers)",
             0
     },
     {
@@ -191,47 +199,90 @@ void add_infile(const char *path)
 
 typedef struct
 {
+    unsigned verbose: 2;
+    unsigned trim_trailing: 1;
+    unsigned tab_mode: 2; /* 0: none, 1: entab, 2: detab; 3: retab */
+    unsigned lf_mode: 2; /* 0: autodetect, 1: UNIX, 2: MSDOS, 3: old-style Mac (CR-only) */
+	unsigned ignore_access_errors: 1;
+} cmd_t;
+
+typedef struct
+{
     FILE *fin;
     FILE *fout;
 } filedef_t;
 
-int pop_filedef(filedef_t *dst, const char **filepath, const char *out_fname)
+int pop_filedef(cmd_t cmd, filedef_t *dst, const char **filepath, const char *out_fname)
 {
     static int idx = 0;
 
-    memset(dst, 0, sizeof(*dst));
-    *filepath = NULL;
+	for (;;)
+	{
+		memset(dst, 0, sizeof(*dst));
+		*filepath = NULL;
 
-    if (idx == 0 && !infiles)
-    {
-        dst->fin = stdin;
-        dst->fout = stdout;
-        *filepath = "stdin -> stdout";
+		if (idx == 0 && !infiles)
+		{
+			dst->fin = stdin;
+			dst->fout = stdout;
+			*filepath = "stdin -> stdout";
 
-        if (out_fname)
-        {
-            dst->fout = fopen(out_fname, "wb");
-            *filepath = "stdin -> file";
-        }
-        idx++;
-        return !!dst->fout;
-    }
-    else if (infiles && infiles[idx])
-    {
-        if (out_fname)
-        {
-            dst->fin = fopen(infiles[idx], "rb");
-            dst->fout = fopen(out_fname, "wb");
-        }
-        else
-        {
-            dst->fin = fopen(infiles[idx], "r+b");
-            dst->fout = dst->fin;
-        }
-        *filepath = infiles[idx];
-        idx++;
-        return !!dst->fin;
-    }
+			if (out_fname)
+			{
+				dst->fout = fopen(out_fname, "wb");
+				if (cmd.ignore_access_errors && !dst->fout)
+				{
+					fflush(stdout);
+					fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, dumping to stdout instead.\n", out_fname);
+					dst->fout = stdout;
+				}
+				else
+				{
+					*filepath = "stdin -> file";
+				}
+			}
+			idx++;
+			return !!dst->fout;
+		}
+		else if (infiles && infiles[idx])
+		{
+			if (out_fname)
+			{
+				dst->fin = fopen(infiles[idx], "rb");
+				dst->fout = fopen(out_fname, "wb");
+				if (cmd.ignore_access_errors && !dst->fin)
+				{
+					fflush(stdout);
+					fprintf(stderr, "*** WARNING: cannot open file '%s' for reading, ignoring this file.\n", infiles[idx]);
+					idx++;
+					continue;
+				}
+				if (cmd.ignore_access_errors && !dst->fout)
+				{
+					fflush(stdout);
+					fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, ignoring this file.\n", out_fname);
+					idx++;
+					continue;
+				}
+			}
+			else
+			{
+				dst->fin = fopen(infiles[idx], "r+b");
+				dst->fout = dst->fin;
+				if (cmd.ignore_access_errors && !dst->fin)
+				{
+					fflush(stdout);
+					fprintf(stderr, "*** WARNING: cannot open file '%s', ignoring this file.\n", infiles[idx]);
+					idx++;
+					continue;
+				}
+			}
+			*filepath = infiles[idx];
+			idx++;
+			return !!dst->fin;
+		}
+		break;
+	}
     return 0;
 }
 
@@ -316,14 +367,6 @@ void closefile(filedef_t *f)
         f->fin = NULL;
     }
 }
-
-typedef struct
-{
-    unsigned verbose: 2;
-    unsigned trim_trailing: 1;
-    unsigned tab_mode: 2; /* 0: none, 1: entab, 2: detab; 3: retab */
-    unsigned lf_mode: 2; /* 0: autodetect, 1: UNIX, 2: MSDOS, 3: old-style Mac (CR-only) */
-} cmd_t;
 
 void report_lf_mode(cmd_t cmd)
 {
@@ -426,6 +469,10 @@ int main(int argc, char **argv)
             add_infile(param);
             continue;
 
+		case ARG_IGNORE_ACCESS_ERRORS:
+			cmd.ignore_access_errors = 1;
+			continue;
+
         case ARG_TRIM_TRAILING:
             cmd.trim_trailing = 1;
             continue;
@@ -434,7 +481,7 @@ int main(int argc, char **argv)
             l = strtoul(param, &p, 10);
             if (*p || l == 0 || l > 16 /* heuristicly sane max tab size */)
             {
-                printf("%s: invalid tabsize specified: %s\n", appname, param);
+                fprintf(stderr, "%s: invalid tabsize specified: %s\n", appname, param);
                 exit(EXIT_FAILURE);
             }
             tabsize = (unsigned int)l;
@@ -470,11 +517,13 @@ int main(int argc, char **argv)
             continue;
 
         case GETOPTS_UNKNOWN:
-            printf("%s: unknown parameter %s\n", appname, param);
+		    fflush(stdout);
+            fprintf(stderr, "%s: unknown parameter %s\n", appname, param);
             exit(EXIT_FAILURE);
 
         case GETOPTS_MISSING_PARAM:
-            printf("%s: option %s is missing a mandatory parameter\n", appname, param);
+		    fflush(stdout);
+            fprintf(stderr, "%s: option %s is missing a mandatory parameter\n", appname, param);
             exit(EXIT_FAILURE);
         }
         break;
@@ -482,13 +531,14 @@ int main(int argc, char **argv)
 
     if (out_fname && infiles && infiles[1])
     {
-        printf("%s: when you specify an output file (%s), you can only specify one input file or none at all\n", appname, out_fname);
+	    fflush(stdout);
+        fprintf(stderr, "%s: when you specify an output file (%s), you can only specify one input file or none at all\n", appname, out_fname);
         exit(EXIT_FAILURE);
     }
 
     fflush(stdout);
 
-    while (pop_filedef(&fdef, &fpath, out_fname))
+    while (pop_filedef(cmd, &fdef, &fpath, out_fname))
     {
         char *buf;
         size_t len;
@@ -525,7 +575,10 @@ int main(int argc, char **argv)
         if (!*fname4err)
             fname4err = fpath;
 
-        if (cmd.verbose) fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
+        if (cmd.verbose) 
+		{
+			fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
+		}
 
         // read file into buffer:
         buf = readfile(&fdef, &len);
@@ -587,6 +640,13 @@ int main(int argc, char **argv)
                 if (cmd.trim_trailing && d_non_ws)
                 {
                     d = d_non_ws;
+                }
+                else if (cmd.trim_trailing && !d_non_ws)
+                {
+					d--;
+					while (d >= obuf && strchr(" \t", d[0]))
+						d--;
+					d++;
                 }
 
                 // one newline:
@@ -835,7 +895,10 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (cmd.verbose) fprintf(stderr, "Processing: ---done---\n");
+	if (cmd.verbose) 
+	{
+		fprintf(stderr, "Processing: ---done---\n");
+	}
 	exit(EXIT_SUCCESS);
 }
 
