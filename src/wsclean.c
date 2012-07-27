@@ -51,6 +51,7 @@ typedef enum command
     ARG_OUT_FILE,
     ARG_TRIM_TRAILING,
     ARG_TABSIZE,
+	ARG_MAXEMPTYLINES,
     ARG_ENTAB,
     ARG_DETAB,
     ARG_RETAB,
@@ -103,6 +104,13 @@ static const option_t opts[] =
             "T",
             "tabsize",
             "set the tabsize (default: 4)",
+            GETOPTS_NEED_ARGUMENT
+    },
+    {
+        ARG_MAXEMPTYLINES,
+            "L",
+            "maxemptylines",
+            "set the maximum number of empty lines (default: 20)",
             GETOPTS_NEED_ARGUMENT
     },
     {
@@ -435,6 +443,7 @@ int main(int argc, char **argv)
     char *param;
     const char *appname = filename(argv[0]);
     unsigned int tabsize = 4;
+	unsigned int maxemptylines = 20;
     const char *lang = "auto";
     cmd_t cmd = {0};
     const char *fpath;
@@ -485,6 +494,16 @@ int main(int argc, char **argv)
                 exit(EXIT_FAILURE);
             }
             tabsize = (unsigned int)l;
+            continue;
+
+		case ARG_MAXEMPTYLINES:
+            l = strtoul(param, &p, 10);
+            if (*p || l == 0 || l > 1000 /* heuristicly sane max empty line count */)
+            {
+                fprintf(stderr, "%s: invalid max empty line count specified: %s\n", appname, param);
+                exit(EXIT_FAILURE);
+            }
+            maxemptylines = (unsigned int)l;
             continue;
 
         case ARG_ENTAB:
@@ -547,9 +566,11 @@ int main(int argc, char **argv)
         char *d;
         char *e;
         char *d_non_ws;
+        char *d_max_el;
         char *obuf;
         unsigned int colpos;
         unsigned int previous_line_indent;
+		unsigned int emptylines;
         union
         {
             unsigned int anything;
@@ -618,6 +639,8 @@ int main(int argc, char **argv)
         doctext_marker = NULL;
         doctext_marker_len = 0;
         d_non_ws = NULL;
+		emptylines = 0;
+		d_max_el = NULL;
         d = obuf;
         for (s = buf, e = buf + len; s < e; s++)
         {
@@ -648,6 +671,21 @@ int main(int argc, char **argv)
 						d--;
 					d++;
                 }
+
+				// trim number of empty lines?
+				if (!d_non_ws && d_max_el && d_max_el < d)
+				{
+					d = d_max_el;
+				}
+				else if (!d_non_ws && !d_max_el && ++emptylines >= maxemptylines)
+				{
+					d_max_el = d;
+				}
+				else if (d_non_ws)
+				{
+					d_max_el = NULL;
+					emptylines = 0;
+				}
 
                 // one newline:
                 colpos = 0;
