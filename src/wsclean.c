@@ -467,7 +467,7 @@ int main(int argc, const char **argv)
 
         case ARG_HELP:
             getopts_usage(opts);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
 
         case ARG_OUT_FILE:
             out_fname = param;
