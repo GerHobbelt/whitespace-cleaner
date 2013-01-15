@@ -437,10 +437,10 @@ int determine_indent_language(cmd_t cmd, const char *lang, const char *fname, co
 }
 
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
     unsigned int opt;
-    char *param;
+    const char *param;
     const char *appname = filename(argv[0]);
     unsigned int tabsize = 4;
 	unsigned int maxemptylines = 20;
