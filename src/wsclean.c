@@ -44,6 +44,10 @@ Features:
 
 #include "getopts.h"
 
+
+#define DEBUG_ENTABBING   0
+
+
 typedef enum command
 {
     ARG_HELP = 1,
@@ -627,7 +631,7 @@ int main(int argc, const char **argv)
                 continue;
             }
         }
-        obuf = (char *)malloc(size + 4);
+        obuf = (char *)malloc(size * (DEBUG_ENTABBING + 1) + 4);
         if (!obuf)
         {
             fprintf(stderr, "*** ERROR: failure while processing data from file '%s'\n", (cmd.verbose ? fpath : fname4err));
@@ -737,7 +741,9 @@ int main(int argc, const char **argv)
                         : (inside.el.doctext || inside.el.dquoted_string || inside.el.quoted_string)
                         ? 0
                         : colpos > previous_line_indent
+                        ? cmd.tab_mode & 2
                         ? 2
+                        : cmd.tab_mode
                         : cmd.tab_mode)
                 {
                 default:
@@ -761,12 +767,26 @@ int main(int argc, const char **argv)
             case ' ':
                 colpos++;
 
+#if DEBUG_ENTABBING
+                sprintf(d, "%x/%d/%d", inside.anything, cmd.tab_mode, (!inside.anything
+                        ? cmd.tab_mode
+                        : (inside.el.doctext || inside.el.dquoted_string || inside.el.quoted_string)
+                        ? 0
+                        : colpos > previous_line_indent
+                        ? cmd.tab_mode & 2
+                        ? 2
+                        : cmd.tab_mode
+                        : cmd.tab_mode));
+                d += strlen(d);
+#endif
                 switch (!inside.anything
                         ? cmd.tab_mode
                         : (inside.el.doctext || inside.el.dquoted_string || inside.el.quoted_string)
                         ? 0
                         : colpos > previous_line_indent
+                        ? cmd.tab_mode & 2
                         ? 2
+                        : cmd.tab_mode
                         : cmd.tab_mode)
                 {
                 case 1:
@@ -786,7 +806,7 @@ int main(int argc, const char **argv)
                                 ;
                             if (i == tabsize)
                             {
-                                if (inside.anything && colpos + i - c > previous_line_indent)
+                                if (inside.anything && colpos + i - c > previous_line_indent && (cmd.tab_mode & 2))
                                 {
                                     s++;
                                 }
