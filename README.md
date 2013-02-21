@@ -12,10 +12,10 @@ Features:
 When & Why You Want To Use This Tool
 ------------------------------------
 
-If you want to detab/entab your text files, source code, etc. and particularly when you like to convert 
+If you want to detab/entab your text files, source code, etc. and particularly when you like to convert
 leading whitespace to TABs *but not always*, i.e. when you want scope/block indentation to show up as TABs
 but the remainder of the leading whitespace as SPACES, such as the last few spaces leading up to the
-next set of arguments in multi-line argument lists and formatted chucnks in complex comment blocks 
+next set of arguments in multi-line argument lists and formatted chucnks in complex comment blocks
 with internal indentiation (and no '*', '#' or similar 'comment line leader characters').
 
 When you want to 'pretty print' or reformat your source code, my first (and probably only) stop shop

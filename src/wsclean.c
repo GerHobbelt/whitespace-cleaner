@@ -55,7 +55,7 @@ typedef enum command
     ARG_OUT_FILE,
     ARG_TRIM_TRAILING,
     ARG_TABSIZE,
-	ARG_MAXEMPTYLINES,
+    ARG_MAXEMPTYLINES,
     ARG_ENTAB,
     ARG_DETAB,
     ARG_RETAB,
@@ -215,7 +215,7 @@ typedef struct
     unsigned trim_trailing: 1;
     unsigned tab_mode: 2; /* 0: none, 1: entab, 2: detab; 3: retab */
     unsigned lf_mode: 2; /* 0: autodetect, 1: UNIX, 2: MSDOS, 3: old-style Mac (CR-only) */
-	unsigned ignore_access_errors: 1;
+    unsigned ignore_access_errors: 1;
 } cmd_t;
 
 typedef struct
@@ -228,73 +228,73 @@ int pop_filedef(cmd_t cmd, filedef_t *dst, const char **filepath, const char *ou
 {
     static int idx = 0;
 
-	for (;;)
-	{
-		memset(dst, 0, sizeof(*dst));
-		*filepath = NULL;
+    for (;;)
+    {
+        memset(dst, 0, sizeof(*dst));
+        *filepath = NULL;
 
-		if (idx == 0 && !infiles)
-		{
-			dst->fin = stdin;
-			dst->fout = stdout;
-			*filepath = "stdin -> stdout";
+        if (idx == 0 && !infiles)
+        {
+            dst->fin = stdin;
+            dst->fout = stdout;
+            *filepath = "stdin -> stdout";
 
-			if (out_fname)
-			{
-				dst->fout = fopen(out_fname, "wb");
-				if (cmd.ignore_access_errors && !dst->fout)
-				{
-					fflush(stdout);
-					fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, dumping to stdout instead.\n", out_fname);
-					dst->fout = stdout;
-				}
-				else
-				{
-					*filepath = "stdin -> file";
-				}
-			}
-			idx++;
-			return !!dst->fout;
-		}
-		else if (infiles && infiles[idx])
-		{
-			if (out_fname)
-			{
-				dst->fin = fopen(infiles[idx], "rb");
-				dst->fout = fopen(out_fname, "wb");
-				if (cmd.ignore_access_errors && !dst->fin)
-				{
-					fflush(stdout);
-					fprintf(stderr, "*** WARNING: cannot open file '%s' for reading, ignoring this file.\n", infiles[idx]);
-					idx++;
-					continue;
-				}
-				if (cmd.ignore_access_errors && !dst->fout)
-				{
-					fflush(stdout);
-					fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, ignoring this file.\n", out_fname);
-					idx++;
-					continue;
-				}
-			}
-			else
-			{
-				dst->fin = fopen(infiles[idx], "r+b");
-				dst->fout = dst->fin;
-				if (cmd.ignore_access_errors && !dst->fin)
-				{
-					fflush(stdout);
-					fprintf(stderr, "*** WARNING: cannot open file '%s', ignoring this file.\n", infiles[idx]);
-					idx++;
-					continue;
-				}
-			}
-			*filepath = infiles[idx];
-			idx++;
-			return !!dst->fin;
-		}
-		break;
-	}
+            if (out_fname)
+            {
+                dst->fout = fopen(out_fname, "wb");
+                if (cmd.ignore_access_errors && !dst->fout)
+                {
+                    fflush(stdout);
+                    fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, dumping to stdout instead.\n", out_fname);
+                    dst->fout = stdout;
+                }
+                else
+                {
+                    *filepath = "stdin -> file";
+                }
+            }
+            idx++;
+            return !!dst->fout;
+        }
+        else if (infiles && infiles[idx])
+        {
+            if (out_fname)
+            {
+                dst->fin = fopen(infiles[idx], "rb");
+                dst->fout = fopen(out_fname, "wb");
+                if (cmd.ignore_access_errors && !dst->fin)
+                {
+                    fflush(stdout);
+                    fprintf(stderr, "*** WARNING: cannot open file '%s' for reading, ignoring this file.\n", infiles[idx]);
+                    idx++;
+                    continue;
+                }
+                if (cmd.ignore_access_errors && !dst->fout)
+                {
+                    fflush(stdout);
+                    fprintf(stderr, "*** WARNING: cannot open file '%s' for writing, ignoring this file.\n", out_fname);
+                    idx++;
+                    continue;
+                }
+            }
+            else
+            {
+                dst->fin = fopen(infiles[idx], "r+b");
+                dst->fout = dst->fin;
+                if (cmd.ignore_access_errors && !dst->fin)
+                {
+                    fflush(stdout);
+                    fprintf(stderr, "*** WARNING: cannot open file '%s', ignoring this file.\n", infiles[idx]);
+                    idx++;
+                    continue;
+                }
+            }
+            *filepath = infiles[idx];
+            idx++;
+            return !!dst->fin;
+        }
+        break;
+    }
     return 0;
 }
 
@@ -447,7 +447,7 @@ int main(int argc, const char **argv)
     const char *param;
     const char *appname = filename(argv[0]);
     unsigned int tabsize = 4;
-	unsigned int maxemptylines = 20;
+    unsigned int maxemptylines = 20;
     const char *lang = "auto";
     cmd_t cmd = {0};
     const char *fpath;
@@ -482,9 +482,9 @@ int main(int argc, const char **argv)
             add_infile(param);
             continue;
 
-		case ARG_IGNORE_ACCESS_ERRORS:
-			cmd.ignore_access_errors = 1;
-			continue;
+        case ARG_IGNORE_ACCESS_ERRORS:
+            cmd.ignore_access_errors = 1;
+            continue;
 
         case ARG_TRIM_TRAILING:
             cmd.trim_trailing = 1;
@@ -500,7 +500,7 @@ int main(int argc, const char **argv)
             tabsize = (unsigned int)l;
             continue;
 
-		case ARG_MAXEMPTYLINES:
+        case ARG_MAXEMPTYLINES:
             l = strtoul(param, &p, 10);
             if (*p || l == 0 || l > 1000 /* heuristicly sane max empty line count */)
             {
@@ -540,12 +540,12 @@ int main(int argc, const char **argv)
             continue;
 
         case GETOPTS_UNKNOWN:
-		    fflush(stdout);
+            fflush(stdout);
             fprintf(stderr, "%s: unknown parameter %s\n", appname, param);
             exit(EXIT_FAILURE);
 
         case GETOPTS_MISSING_PARAM:
-		    fflush(stdout);
+            fflush(stdout);
             fprintf(stderr, "%s: option %s is missing a mandatory parameter\n", appname, param);
             exit(EXIT_FAILURE);
         }
@@ -554,7 +554,7 @@ int main(int argc, const char **argv)
 
     if (out_fname && infiles && infiles[1])
     {
-	    fflush(stdout);
+        fflush(stdout);
         fprintf(stderr, "%s: when you specify an output file (%s), you can only specify one input file or none at all\n", appname, out_fname);
         exit(EXIT_FAILURE);
     }
@@ -574,7 +574,7 @@ int main(int argc, const char **argv)
         char *obuf;
         unsigned int colpos;
         unsigned int previous_line_indent;
-		unsigned int emptylines;
+        unsigned int emptylines;
         union
         {
             unsigned int anything;
@@ -600,10 +600,10 @@ int main(int argc, const char **argv)
         if (!*fname4err)
             fname4err = fpath;
 
-        if (cmd.verbose) 
-		{
-			fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
-		}
+        if (cmd.verbose)
+        {
+            fprintf(stderr, "Processing: %s\n", (cmd.verbose > 1 ? fpath : fname4err));
+        }
 
         // read file into buffer:
         buf = readfile(&fdef, &len);
@@ -643,8 +643,8 @@ int main(int argc, const char **argv)
         doctext_marker = NULL;
         doctext_marker_len = 0;
         d_non_ws = NULL;
-		emptylines = 0;
-		d_max_el = NULL;
+        emptylines = 0;
+        d_max_el = NULL;
         d = obuf;
         for (s = buf, e = buf + len; s < e; s++)
         {
@@ -670,26 +670,26 @@ int main(int argc, const char **argv)
                 }
                 else if (cmd.trim_trailing && !d_non_ws)
                 {
-					d--;
-					while (d >= obuf && strchr(" \t", d[0]))
-						d--;
-					d++;
+                    d--;
+                    while (d >= obuf && strchr(" \t", d[0]))
+                        d--;
+                    d++;
                 }
 
-				// trim number of empty lines?
-				if (!d_non_ws && d_max_el && d_max_el < d)
-				{
-					d = d_max_el;
-				}
-				else if (!d_non_ws && !d_max_el && ++emptylines >= maxemptylines)
-				{
-					d_max_el = d;
-				}
-				else if (d_non_ws)
-				{
-					d_max_el = NULL;
-					emptylines = 0;
-				}
+                // trim number of empty lines?
+                if (!d_non_ws && d_max_el && d_max_el < d)
+                {
+                    d = d_max_el;
+                }
+                else if (!d_non_ws && !d_max_el && ++emptylines >= maxemptylines)
+                {
+                    d_max_el = d;
+                }
+                else if (d_non_ws)
+                {
+                    d_max_el = NULL;
+                    emptylines = 0;
+                }
 
                 // one newline:
                 colpos = 0;
@@ -704,21 +704,21 @@ int main(int argc, const char **argv)
                     inside.el.continued_line++;
                     inside.el.continued_line %= 3;
                 }
-				else
-				{
-					// quoted strings won't make it past the newline, unless it's continued C-preprocessor style.
-					//
-					// This is to prevent cockups when you're actually not formatting source code but rather a 
-					// text file with maybe some source code mingling with the regular text in there.
-	                if (inside.el.quoted_string)
-					{
-						inside.el.quoted_string = 0;
-					}
-	                if (inside.el.dquoted_string)
-					{
-						inside.el.dquoted_string = 0;
-					}
-				}
+                else
+                {
+                    // quoted strings won't make it past the newline, unless it's continued C-preprocessor style.
+                    //
+                    // This is to prevent cockups when you're actually not formatting source code but rather a
+                    // text file with maybe some source code mingling with the regular text in there.
+                    if (inside.el.quoted_string)
+                    {
+                        inside.el.quoted_string = 0;
+                    }
+                    if (inside.el.dquoted_string)
+                    {
+                        inside.el.dquoted_string = 0;
+                    }
+                }
 
                 switch (cmd.lf_mode)
                 {
@@ -832,30 +832,30 @@ int main(int argc, const char **argv)
                     continue;
                 }
 
-			case '\\':
-				// support escape sequences: nobody in their right mind is writing stuff like 
-				//    \"xyz
-				// unless it's code.
-				//
-				// We don't care so much about the escape sequences as long as they're not escaping
-				// quotes, so the only things we watch for is \' and \" here.
+            case '\\':
+                // support escape sequences: nobody in their right mind is writing stuff like
+                //    \"xyz
+                // unless it's code.
+                //
+                // We don't care so much about the escape sequences as long as they're not escaping
+                // quotes, so the only things we watch for is \' and \" here.
 
-				if (s[1] != '\n' && s[1] != '\r' && s[1] != '\t')
-				{
-					// first non-whitespace one this line?
-					if (!inside.anything && !d_non_ws)
-					{
-						previous_line_indent = colpos;
-					}
+                if (s[1] != '\n' && s[1] != '\r' && s[1] != '\t')
+                {
+                    // first non-whitespace one this line?
+                    if (!inside.anything && !d_non_ws)
+                    {
+                        previous_line_indent = colpos;
+                    }
 
-					colpos += 2;
-					*d++ = *s++;
-					*d++ = *s;
-					d_non_ws = d;
-					continue;
-				}
-				// fall through
-				
+                    colpos += 2;
+                    *d++ = *s++;
+                    *d++ = *s;
+                    d_non_ws = d;
+                    continue;
+                }
+                // fall through
+
             default:
                 // non-whitespace is assumed:
                 if (!inside.anything && !d_non_ws)
@@ -874,89 +874,89 @@ int main(int argc, const char **argv)
                             inside.el.c_comment = inside.el.cpp_comment = 1;
 
                         if (*s == '\\' && (s[1] == '\r' || s[1] == '\n'))
-							inside.el.continued_line = 1;
+                            inside.el.continued_line = 1;
 
-						if (*s == '\'' && !inside.el.dquoted_string)
+                        if (*s == '\'' && !inside.el.dquoted_string)
                             inside.el.quoted_string = !inside.el.quoted_string;
                         if (*s == '"' && !inside.el.quoted_string)
-							inside.el.dquoted_string = !inside.el.dquoted_string;
+                            inside.el.dquoted_string = !inside.el.dquoted_string;
 
-						if (*s == '<' && s[1] == '<' && s[2] == '<' && !inside.el.quoted_string && !inside.el.dquoted_string)
-						{
-							inside.el.doctext = 1;
+                        if (*s == '<' && s[1] == '<' && s[2] == '<' && !inside.el.quoted_string && !inside.el.dquoted_string)
+                        {
+                            inside.el.doctext = 1;
 
-							doctext_marker = s + 3;
-							doctext_marker_len = strcspn(doctext_marker, "\r\n \t");
-						}
-						if (inside.el.doctext && colpos == 0 && strncmp(s, doctext_marker, doctext_marker_len) == 0)
-						{
-							inside.el.doctext = 0;
+                            doctext_marker = s + 3;
+                            doctext_marker_len = strcspn(doctext_marker, "\r\n \t");
+                        }
+                        if (inside.el.doctext && colpos == 0 && strncmp(s, doctext_marker, doctext_marker_len) == 0)
+                        {
+                            inside.el.doctext = 0;
 
-							doctext_marker = NULL;
-							doctext_marker_len = 0;
-						}
+                            doctext_marker = NULL;
+                            doctext_marker_len = 0;
+                        }
 
-						if (!inside.el.doctext && !inside.el.dquoted_string && !inside.el.quoted_string)
-						{
-							if (*s == '(' || *s == '[')
-							{
-								inside.el.conditional_exp++;
-							}
-							if (inside.el.conditional_exp && (*s == ')' || *s == ']'))
-							{
-								inside.el.conditional_exp--;
-							}
-							// note: because we also support JavaScript, we cannot simply reset the conditional_exp value to 0 when encountering a '{'!
-						}
-					}
-					else if (inside.el.c_comment)
-					{
-						if (*s == '*' && s[1] == '/')
-							inside.el.c_comment = 0;
-					}
-				}
+                        if (!inside.el.doctext && !inside.el.dquoted_string && !inside.el.quoted_string)
+                        {
+                            if (*s == '(' || *s == '[')
+                            {
+                                inside.el.conditional_exp++;
+                            }
+                            if (inside.el.conditional_exp && (*s == ')' || *s == ']'))
+                            {
+                                inside.el.conditional_exp--;
+                            }
+                            // note: because we also support JavaScript, we cannot simply reset the conditional_exp value to 0 when encountering a '{'!
+                        }
+                    }
+                    else if (inside.el.c_comment)
+                    {
+                        if (*s == '*' && s[1] == '/')
+                            inside.el.c_comment = 0;
+                    }
+                }
 
-				colpos++;
-				*d++ = *s;
-				d_non_ws = d;
-				continue;
-			}
-		}
-		*d = 0;
+                colpos++;
+                *d++ = *s;
+                d_non_ws = d;
+                continue;
+            }
+        }
+        *d = 0;
 
-		// processing done, now write result to file:
-		len = writefile(&fdef, obuf, d - obuf);
-		if (len < 0)
-		{
-			fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", out_fname);
-			exit(EXIT_FAILURE);
-		}
+        // processing done, now write result to file:
+        len = writefile(&fdef, obuf, d - obuf);
+        if (len < 0)
+        {
+            fprintf(stderr, "*** ERROR: failure while WRITING data to file '%s'\n", out_fname);
+            exit(EXIT_FAILURE);
+        }
 
-		closefile(&fdef);
-	}
-	
+        closefile(&fdef);
+    }
+
     if (fdef.fin == NULL && fpath != NULL)
     {
         fname = filename(fpath);
 
-		fname4err = fname;
-		if (!*fname4err)
-			fname4err = fpath;
+        fname4err = fname;
+        if (!*fname4err)
+            fname4err = fpath;
 
-		fprintf(stderr, "*** ERROR: cannot open file '%s' for reading...\n", (cmd.verbose ? fpath : fname4err));
-		exit(EXIT_FAILURE);
-	}
+        fprintf(stderr, "*** ERROR: cannot open file '%s' for reading...\n", (cmd.verbose ? fpath : fname4err));
+        exit(EXIT_FAILURE);
+    }
 
     if (fdef.fout == NULL && out_fname != NULL)
     {
-		fprintf(stderr, "*** ERROR: cannot open output file '%s' for writing...\n", out_fname);
-		exit(EXIT_FAILURE);
-	}
+        fprintf(stderr, "*** ERROR: cannot open output file '%s' for writing...\n", out_fname);
+        exit(EXIT_FAILURE);
+    }
 
-	if (cmd.verbose) 
-	{
-		fprintf(stderr, "Processing: ---done---\n");
-	}
-	exit(EXIT_SUCCESS);
+    if (cmd.verbose)
+    {
+        fprintf(stderr, "Processing: ---done---\n");
+    }
+    exit(EXIT_SUCCESS);
 }
 
