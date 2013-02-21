@@ -26,6 +26,7 @@
 #include "getopts.h"
 
 static int g_a=0;
+static int g_stop=0;
 static int g_argc=0;
 static const char **g_argv=0;
 static const char *g_program=0;
@@ -35,6 +36,7 @@ getopts_init(int argc, const char **argv, const char *program)
 {
     g_a=0;
     g_argc=argc-1;
+    g_stop=g_argc;
     g_argv=argv+1;
     g_program=program;
 }
@@ -67,71 +69,79 @@ getopts(const option_t *options, const char **param)
     if (g_a>=g_argc || g_argv[g_a]==0)
         return (0);
 
-    /*
-     * check for a long option with --
-     */
-    if (g_argv[g_a][0]=='-' && g_argv[g_a][1]=='-') {
-        *param=&g_argv[g_a][2];
-        for (; o->longopt; o++) {
-            int found=0;
-            if (!strcmp(o->longopt, &g_argv[g_a][2]))
-                found=1;
-            else if (strstr(&g_argv[g_a][2], o->longopt)==&g_argv[g_a][2]) {
-                if (g_argv[g_a][2+strlen(o->longopt)]==':')
-                    found=1;
-                else if (g_argv[g_a][2+strlen(o->longopt)]=='=')
-                    found=1;
-            }
-            if (found) {
-                if (o->flags & GETOPTS_NEED_ARGUMENT) {
-                    p=strchr(&g_argv[g_a][1], ':');
-                    if (p) {
-                        *param=p+1;
-                        g_a++;
-                        return (o->name);
-                    }
-                    p=strchr(&g_argv[g_a][1], '=');
-                    if (p) {
-                        *param=p+1;
-                        g_a++;
-                        return (o->name);
-                    }
-                    if (g_a==g_argc) {
-                        *param = g_argv[g_a];
-                        return (GETOPTS_MISSING_PARAM);
-                    }
-                    *param=g_argv[g_a+1];
-                    g_a++;
-                }
+    if (g_a < g_stop) {
+        /*
+         * check for a long option with --
+         */
+        if (g_argv[g_a][0]=='-' && g_argv[g_a][1]=='-') {
+            /* '--' marks the end of the options list: anything after this is treated as a 'file' argument: */
+            if (!g_argv[g_a][2]) {
                 g_a++;
-                return (o->name);
+                g_stop=g_a;
+                return getopts(options, param);
             }
+            *param=&g_argv[g_a][2];
+            for (; o->longopt; o++) {
+                int found=0;
+                if (!strcmp(o->longopt, &g_argv[g_a][2]))
+                    found=1;
+                else if (strstr(&g_argv[g_a][2], o->longopt)==&g_argv[g_a][2]) {
+                    if (g_argv[g_a][2+strlen(o->longopt)]==':')
+                        found=1;
+                    else if (g_argv[g_a][2+strlen(o->longopt)]=='=')
+                        found=1;
+                }
+                if (found) {
+                    if (o->flags & GETOPTS_NEED_ARGUMENT) {
+                        p=strchr(&g_argv[g_a][1], ':');
+                        if (p) {
+                            *param=p+1;
+                            g_a++;
+                            return (o->name);
+                        }
+                        p=strchr(&g_argv[g_a][1], '=');
+                        if (p) {
+                            *param=p+1;
+                            g_a++;
+                            return (o->name);
+                        }
+                        if (g_a==g_argc) {
+                            *param = g_argv[g_a];
+                            return (GETOPTS_MISSING_PARAM);
+                        }
+                        *param=g_argv[g_a+1];
+                        g_a++;
+                    }
+                    g_a++;
+                    return (o->name);
+                }
+            }
+            *param = g_argv[g_a];
+            return (GETOPTS_UNKNOWN);
         }
-        *param = g_argv[g_a];
-        return (GETOPTS_UNKNOWN);
-    }
 
-    /*
-     * check for a short option name
-     */
-    else if (g_argv[g_a][0]=='-' || g_argv[g_a][0]=='/') {
-        *param=&g_argv[g_a][1];
-        for (; o->shortopt; o++) {
-            if (!strcmp(o->shortopt, &g_argv[g_a][1])) {
-                if (o->flags & GETOPTS_NEED_ARGUMENT) {
-                    if (g_a==g_argc) {
-                        *param = g_argv[g_a];
-                        return (GETOPTS_MISSING_PARAM);
+        /*
+         * check for a short option name
+         */
+        else if (g_argv[g_a][0]=='-' || g_argv[g_a][0]=='/') {
+            *param=&g_argv[g_a][1];
+            for (; o->shortopt; o++) {
+                if (!strcmp(o->shortopt, &g_argv[g_a][1])) {
+                    if (o->flags & GETOPTS_NEED_ARGUMENT) {
+                        if (g_a==g_argc) {
+                            *param = g_argv[g_a];
+                            return (GETOPTS_MISSING_PARAM);
+                        }
+                        *param=g_argv[g_a+1];
+                        g_a++;
                     }
-                    *param=g_argv[g_a+1];
                     g_a++;
+                    return (o->name);
                 }
-                g_a++;
-                return (o->name);
             }
+            *param = g_argv[g_a];
+            return (GETOPTS_UNKNOWN);
         }
-        *param = g_argv[g_a];
-        return (GETOPTS_UNKNOWN);
     }
 
     if (param)
