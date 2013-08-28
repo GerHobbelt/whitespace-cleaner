@@ -30,13 +30,13 @@ WSCLEAN_SRC=\
 	src/getopts.o \
 	src/wsclean.o
 
-all:		wsclean
+all:        wsclean
 
-.PHONY:		all clean
+.PHONY:     all clean
 
 # executables
 
-wsclean:	$(WSCLEAN_SRC)
+wsclean:    $(WSCLEAN_SRC)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 # housekeeping
@@ -55,6 +55,6 @@ src/wsclean.o: src/wsclean.c src/getopts.h
 
 # generic object compilations
 
-src/%.o:	src/%.c
+src/%.o:    src/%.c
 	$(CC) $(CFLAGS) -o $@ $<
 
